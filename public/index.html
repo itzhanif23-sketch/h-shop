@@ -12,7 +12,13 @@
 <div><label for="phone">Phone number *</label><input id="phone" required minlength="8" maxlength="20" inputmode="tel" autocomplete="tel" placeholder="01XXXXXXXXX"></div>
 <div><label for="contactHandle">WhatsApp / Telegram contact *</label><input id="contactHandle" required minlength="3" maxlength="80" placeholder="Your contact number or username"></div>
 <div><label for="playerId">eFootball Player ID *</label><input id="playerId" required minlength="2" maxlength="80" placeholder="Enter Player ID only"></div>
-<div><label for="paymentMethod">Payment method *</label><select id="paymentMethod"><option value="bkash">bKash</option><option value="nagad">Nagad</option><option value="other">Other / discuss with admin</option></select></div>
+<div class="payment-accounts">
+  <h3>পেমেন্ট অ্যাকাউন্ট</h3>
+  <p>বিকাশ (bKash): 01893828768</p>
+  <p>নগদ (Nagad): 01893828768</p>
+  <p>টাকা পাঠানোর আগে নম্বর যাচাই করুন।</p>
+</div>
+ <div><label for="paymentMethod">Payment method *</label><select id="paymentMethod"><option value="bkash">bKash</option><option value="nagad">Nagad</option><option value="other">Other / discuss with admin</option></select></div>
 <div><label for="transactionReference">Payment transaction reference (if paid)</label><input id="transactionReference" maxlength="100" placeholder="Transaction ID; never enter PIN"></div>
 </div><div style="margin-top:13px"><label for="customerNote">Note (optional)</label><textarea id="customerNote" rows="2" maxlength="500" placeholder="Anything the admin should know"></textarea></div>
 <div class="notice" style="margin-top:14px">Important: Do not enter Konami email passwords, account passwords, payment PINs, or OTPs. Submit only details needed to identify your in-game account.</div>
