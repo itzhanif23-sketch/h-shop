@@ -2,7 +2,7 @@
 name: H Shop Database Setup
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
 jobs:
   setup:
