@@ -11,9 +11,9 @@ try {
  const hash = await bcrypt.hash(password, 12);
  await pool.query("INSERT INTO admins(email,password_hash) VALUES($1,$2) ON CONFLICT(email) DO NOTHING",[email,hash]);
  const products = [
- ["coins-140","Luis Suarez +50 coins",50,14000,null],
- ["coins-350","Iker Casillas +100 coins",100,35000,null],
- ["combo-150","Luis + Casillas +150 coins",150,49000,null],
+ ["coins-140","Luis Suarez +50 coins",50,10000,null],
+ ["coins-350","Iker Casillas +100 coins",100,30000,null],
+ ["combo-150","Luis + Casillas +150 coins",150,40000,null],
  ["coins-130","130 Coins",130,15000,null],
  ["coins-300","300 Coins",300,33000,null],
  ["coins-550","550 Coins",550,53000,59000],
