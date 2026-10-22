@@ -3,6 +3,43 @@
 <header><strong>🎮 H SHOP / ADMIN</strong><a href="/">Open store</a></header><main>
 <section id="loginPanel" class="panel"><h1>Admin Login</h1><p class="muted">Only authorized administrators should sign in.</p><form id="loginForm" class="formgrid"><div><label for="email">Admin email</label><input id="email" type="email" required autocomplete="username"></div><div><label for="password">Password</label><input id="password" type="password" required autocomplete="current-password"></div><div><button type="submit">Sign in</button></div></form><div id="loginMsg" class="msg" role="status"></div></section>
 <div id="dashboard" class="hidden"><section class="toprow" style="margin-bottom:16px"><div><h1>Order Management</h1><div id="adminEmail" class="muted"></div></div><button id="logout" class="secondary">Log out</button></section>
+
+<section class="panel" id="tournamentPanel">
+  <div class="toprow">
+    <h2>🏆 Tournament Registrations</h2>
+    <button id="refreshTournament" class="secondary" type="button">
+      Refresh Registrations
+    </button>
+  </div>
+
+  <p class="muted">
+    Review player registrations. Approval does not confirm payment.
+  </p>
+
+  <div id="tournamentMsg" class="msg" role="status"></div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Game UID</th>
+          <th>Phone</th>
+          <th>Entry</th>
+          <th>Prize</th>
+          <th>Status</th>
+          <th>Admin decision</th>
+        </tr>
+      </thead>
+      <tbody id="tournamentBody">
+        <tr>
+          <td colspan="7">Sign in to view registrations.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+  
 <section class="stats"><div class="stat"><span class="muted">Orders loaded</span><strong id="countAll">0</strong></div><div class="stat"><span class="muted">Awaiting review</span><strong id="countPending">0</strong></div><div class="stat"><span class="muted">Processing</span><strong id="countProcessing">0</strong></div><div class="stat"><span class="muted">Delivered</span><strong id="countDelivered">0</strong></div></section>
 <section class="panel"><div class="toprow"><h2>Orders</h2><div class="actions"><select id="filter"><option value="">All statuses</option><option value="pending">Pending</option><option value="payment_review">Payment review</option><option value="paid">Paid</option><option value="processing">Processing</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option><option value="refunded">Refunded</option></select><button id="refresh" class="secondary">Refresh</button></div></div><p class="muted">Verify the payment in your payment account before setting Payment = Verified. Mark Delivered only after manual delivery is complete.</p><div id="ordersMsg" class="msg" role="status"></div><div class="tablewrap"><table><thead><tr><th>Order / Time</th><th>Customer / Contact</th><th>Player ID</th><th>Package / Qty</th><th>Total</th><th>Payment</th><th>Order status</th><th>Admin note / Actions</th></tr></thead><tbody id="ordersBody"><tr><td colspan="8">Sign in to load orders.</td></tr></tbody></table></div><div class="toprow" style="margin-top:12px"><span id="pageInfo" class="muted">Page 1</span><div class="actions"><button id="prev" class="secondary">Previous</button><button id="next" class="secondary">Next</button></div></div></section></div></main>
 <script>
