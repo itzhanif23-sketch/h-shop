@@ -43,6 +43,51 @@ const statusSchema = z.object({
 }).refine(v=>v.orderStatus||v.paymentStatus||v.adminNote!==undefined,"No updates supplied");
 
 app.use(express.static("public", { extensions:["html"] }));
+app.post("/api/tournament/registrations", async (req, res) => {
+  try {
+    const schema = z.object({
+      playerName: z.string().trim().min(2).max(100),
+      gameUid: z.string().trim().min(1).max(40),
+      phone: z.string().trim().min(8).max(20),
+      entryType: z.enum(["free", "paid"]),
+      prizePreference: z.enum(["coins", "cash"])
+    });
+
+    const parsed = schema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Please check all registration fields."
+      });
+    }
+
+    const {
+      playerName,
+      gameUid,
+      phone,
+      entryType,
+      prizePreference
+    } = parsed.data;
+
+    const result = await pool.query(
+      `INSERT INTO tournament_registrations
+       (player_name, game_uid, phone, entry_type, prize_preference)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING public_id, status, created_at`,
+      [playerName, gameUid, phone, entryType, prizePreference]
+    );
+
+    return res.status(201).json({
+      message: "Registration submitted successfully.",
+      registration: result.rows[0]
+    });
+  } catch (error) {
+    console.error("Tournament registration failed:", error.message);
+    return res.status(500).json({
+      error: "Registration failed. Please try again later."
+    });
+  }
+});
 app.get("/api/health",(_req,res)=>res.json({ok:true,service:"h-shop-api"}));
 app.get("/api/products",async(_req,res,next)=>{try{
  const {rows}=await pool.query("SELECT id,slug,name,platform,coins,price_paisa,old_price_paisa FROM products WHERE active=TRUE ORDER BY coins ASC");
