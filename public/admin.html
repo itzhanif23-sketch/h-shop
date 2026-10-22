@@ -48,7 +48,7 @@ function msg(id,text,type){const e=$(id);e.textContent=text;e.className="msg sho
 function money(p){return "৳"+(Number(p)/100).toLocaleString("en-BD",{minimumFractionDigits:2,maximumFractionDigits:2})}
 async function api(url,options={}){const r=await fetch(url,{credentials:"same-origin",...options,headers:{"Content-Type":"application/json",...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Request failed");return d}
 async function checkSession(){try{const d=await api("/api/admin/me");showDashboard(d.admin)}catch{$("loginPanel").classList.remove("hidden");$("dashboard").classList.add("hidden")}}
-function showDashboard(admin){$("loginPanel").classList.add("hidden");$("dashboard").classList.remove("hidden");$("adminEmail").textContent=admin.email;loadOrders()}
+function showDashboard(admin){$("loginPanel").classList.add("hidden");$("dashboard").classList.remove("hidden");$("adminEmail").textContent=admin.email;loadOrders();loadTournament()}
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{const d=await api("/api/admin/login",{method:"POST",body:JSON.stringify({email:$("email").value,password:$("password").value})});$("password").value="";showDashboard(d.admin)}catch(err){msg("loginMsg",err.message,"error")}finally{b.disabled=false}});
 $("logout").onclick=async()=>{try{await api("/api/admin/logout",{method:"POST",body:"{}"})}catch{}$("dashboard").classList.add("hidden");$("loginPanel").classList.remove("hidden")};
 $("refresh").onclick=()=>{page=1;loadOrders()};$("filter").onchange=()=>{page=1;loadOrders()};$("prev").onclick=()=>{if(page>1){page--;loadOrders()}};$("next").onclick=()=>{page++;loadOrders()};
@@ -57,5 +57,74 @@ function optionList(values,current){return values.map(([v,label])=>`<option valu
 function renderRows(){const body=$("ordersBody");body.replaceChildren();if(!orders.length){body.innerHTML="<tr><td colspan='8'>No orders found.</td></tr>";return}for(const o of orders){const tr=document.createElement("tr");const date=new Date(o.created_at).toLocaleString();tr.innerHTML=`<td><strong>${esc(o.public_id)}</strong><small>${esc(date)}</small></td><td>${esc(o.customer_name)}<small>${esc(o.phone)}</small><small>${esc(o.contact_handle)}</small></td><td>${esc(o.player_id)}</td><td>${esc(o.product_name_snapshot)}<small>Qty: ${o.quantity}</small></td><td><strong>${money(o.total_paisa)}</strong><small>${esc(o.payment_method)}${o.transaction_reference?" · "+esc(o.transaction_reference):""}</small></td><td><span class="status">${esc(o.payment_status)}</span></td><td><span class="status">${esc(o.order_status)}</span></td><td><div style="min-width:230px"><label>Payment</label><select data-pay="${esc(o.public_id)}">${optionList([["unverified","Unverified"],["pending","Pending"],["verified","Verified"],["rejected","Rejected"]],o.payment_status)}</select><label style="margin-top:8px">Order status</label><select data-status="${esc(o.public_id)}">${optionList([["pending","Pending"],["payment_review","Payment review"],["paid","Paid"],["processing","Processing"],["delivered","Delivered"],["cancelled","Cancelled"],["refunded","Refunded"]],o.order_status)}</select><label style="margin-top:8px">Admin note</label><input data-note="${esc(o.public_id)}" maxlength="1000" value="${esc(o.admin_note||"")}" placeholder="Internal note"><button style="margin-top:8px" data-save="${esc(o.public_id)}">Save update</button></div></td>`;body.appendChild(tr)}body.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>saveOrder(b.dataset.save,b))}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function saveOrder(id,button){button.disabled=true;try{const paymentStatus=document.querySelector(`[data-pay="${CSS.escape(id)}"]`).value,orderStatus=document.querySelector(`[data-status="${CSS.escape(id)}"]`).value,adminNote=document.querySelector(`[data-note="${CSS.escape(id)}"]`).value;await api(`/api/admin/orders/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify({paymentStatus,orderStatus,adminNote})});msg("ordersMsg",`Order ${id} updated.`,"success");await loadOrders()}catch(e){msg("ordersMsg",e.message,"error")}finally{button.disabled=false}}
+
+async function loadTournament() {
+  const body = $("tournamentBody");
+  body.innerHTML = "<tr><td colspan='7'>Loading registrations...</td></tr>";
+
+  try {
+    const data = await api("/api/admin/tournament/registrations");
+    body.replaceChildren();
+
+    if (!data.registrations.length) {
+      body.innerHTML = "<tr><td colspan='7'>No registrations yet.</td></tr>";
+      return;
+    }
+
+    for (const r of data.registrations) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${esc(r.player_name)}<small>${esc(new Date(r.created_at).toLocaleString())}</small></td>
+        <td>${esc(r.game_uid)}</td>
+        <td>${esc(r.phone)}</td>
+        <td>${esc(r.entry_type)}</td>
+        <td>${esc(r.prize_preference)}</td>
+        <td><span class="status">${esc(r.status)}</span></td>
+        <td>
+          <div class="actions">
+            <button type="button" data-approve="${esc(r.public_id)}">Approve</button>
+            <button type="button" class="secondary" data-reject="${esc(r.public_id)}">Reject</button>
+          </div>
+        </td>`;
+      body.appendChild(tr);
+    }
+
+    body.querySelectorAll("[data-approve]").forEach(b => {
+      b.onclick = () => updateTournament(b.dataset.approve, "approved");
+    });
+
+    body.querySelectorAll("[data-reject]").forEach(b => {
+      b.onclick = () => updateTournament(b.dataset.reject, "rejected");
+    });
+  } catch (e) {
+    body.innerHTML = `<tr><td colspan="7">${esc(e.message)}</td></tr>`;
+  }
+}
+
+async function updateTournament(id, status) {
+  const action = status === "approved" ? "approve" : "reject";
+
+  if (!confirm(`Are you sure you want to ${action} this registration?`)) {
+    return;
+  }
+
+  try {
+    await api(`/api/admin/tournament/registrations/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        status,
+        adminNote: ""
+      })
+    });
+
+    msg("tournamentMsg", `Registration ${action}d successfully.`, "success");
+    await loadTournament();
+  } catch (e) {
+    msg("tournamentMsg", e.message, "error");
+  }
+}
+
+$("refreshTournament").addEventListener("click", loadTournament);
+  
 checkSession();
 </script></body></html>
