@@ -9,4 +9,57 @@
 <form id="regForm"><label>Player Name *<input name="playerName" required maxlength="80" placeholder="Enter your name"></label><label>eFootball Game ID *<input name="gameId" required maxlength="50" placeholder="Game ID only"></label><label>Phone Number *<input name="phone" required maxlength="20" inputmode="tel" placeholder="01XXXXXXXXX"></label><label>Entry Type *<select name="entryType"><option value="Free">Free Entry</option><option value="Paid">Paid Entry</option></select></label><label class="full">Team / Club Name (optional)<input name="team" maxlength="80" placeholder="Your team name"></label><label class="full">Note (optional)<textarea name="note" maxlength="300" placeholder="Note for tournament admin"></textarea></label><button class="btn full" type="submit">Submit Registration →</button></form><p id="result" class="message" aria-live="polite"></p></section>
 <aside class="card"><h3>Tournament Details</h3><div class="notice"><b>Game:</b> eFootball Mobile<br><br><b>Entry:</b> Free / Paid<br><br><b>Prize:</b> Coins + Cash<br><br><b>Approval:</b> Admin manually</div><h3>Requirements</h3><ul class="list"><li>Valid eFootball Game ID</li><li>Correct contact number</li><li>Follow tournament rules</li><li>Paid entry must be verified by admin</li></ul><div class="notice">Demo form only. It does not send or save player data. Backend connection is needed before real registration.</div></aside></div></main>
 <footer class="foot">H SHOP · Tournament Registration Demo</footer>
-<script>document.getElementById('regForm').addEventListener('submit',e=>{e.preventDefault();document.getElementById('result').textContent='Demo only: form checked, but registration was not sent or saved. Connect this form to the backend before real use.'});</script></body></html>
+
+<script>
+document.getElementById("regForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const form = e.currentTarget;
+  const result = document.getElementById("result");
+  const button = form.querySelector('button[type="submit"]');
+
+  const data = new FormData(form);
+
+  const payload = {
+    playerName: String(data.get("playerName") || "").trim(),
+    gameUid: String(data.get("gameId") || "").trim(),
+    phone: String(data.get("phone") || "").trim(),
+    entryType: String(data.get("entryType") || "").toLowerCase(),
+    prizePreference: "coins"
+  };
+
+  if (!payload.playerName || !payload.gameUid || !payload.phone) {
+    result.textContent = "Please fill in all required fields.";
+    return;
+  }
+
+  button.disabled = true;
+  result.textContent = "Submitting registration...";
+
+  try {
+    const response = await fetch("/api/tournament/registrations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(payload)
+    });
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(body.error || "Registration failed.");
+    }
+
+    result.textContent =
+      "Registration submitted! Your status is pending admin approval. Registration ID: " +
+      body.registration.public_id;
+
+    form.reset();
+  } catch (error) {
+    result.textContent =
+      error.message || "Could not submit registration. Please try again.";
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
