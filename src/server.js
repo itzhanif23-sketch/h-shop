@@ -88,6 +88,79 @@ app.post("/api/tournament/registrations", async (req, res) => {
     });
   }
 });
+
+app.get(
+  "/api/admin/tournament/registrations",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT public_id, player_name, game_uid, phone,
+                entry_type, prize_preference, status,
+                admin_note, created_at
+         FROM tournament_registrations
+         ORDER BY created_at DESC
+         LIMIT 100`
+      );
+
+      res.json({ registrations: result.rows });
+    } catch (error) {
+      console.error("Tournament list failed:", error.message);
+      res.status(500).json({
+        error: "Could not load tournament registrations."
+      });
+    }
+  }
+);
+
+app.patch(
+  "/api/admin/tournament/registrations/:publicId",
+  requireAdmin,
+  async (req, res) => {
+    const schema = z.object({
+      status: z.enum(["approved", "rejected"]),
+      adminNote: z.string().trim().max(500).optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Invalid registration update."
+      });
+    }
+
+    try {
+      const result = await pool.query(
+        `UPDATE tournament_registrations
+         SET status = $1,
+             admin_note = $2,
+             updated_at = NOW()
+         WHERE public_id = $3
+         RETURNING public_id, status, admin_note, updated_at`,
+        [
+          parsed.data.status,
+          parsed.data.adminNote ?? null,
+          req.params.publicId
+        ]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          error: "Registration not found."
+        });
+      }
+
+      return res.json({ registration: result.rows[0] });
+    } catch (error) {
+      console.error("Tournament update failed:", error.message);
+      return res.status(500).json({
+        error: "Could not update registration."
+      });
+    }
+  }
+);
+
 app.get("/api/health",(_req,res)=>res.json({ok:true,service:"h-shop-api"}));
 app.get("/api/products",async(_req,res,next)=>{try{
  const {rows}=await pool.query("SELECT id,slug,name,platform,coins,price_paisa,old_price_paisa FROM products WHERE active=TRUE ORDER BY coins ASC");
